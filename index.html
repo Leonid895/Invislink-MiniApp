@@ -7,10 +7,11 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Фиксируем стиль сервиса: серьезный проект, качественная верстка */
         body {
             background-color: #0f172a; 
             color: white;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
@@ -18,93 +19,92 @@
         }
         .glass-card {
             background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         .accent-button {
             background-color: #2563eb;
             color: white;
         }
+        /* Анимация модального окна */
         #backdrop {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(4px); opacity: 0; pointer-events: none;
             transition: opacity 0.3s ease; z-index: 40;
         }
         #backdrop.visible { opacity: 1; pointer-events: auto; }
+        
         #store-modal {
             position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b;
             border-top: 1px solid rgba(255, 255, 255, 0.1); transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50;
-            padding-bottom: env(safe-area-bottom, 20px); border-radius: 1.5rem 1.5rem 0 0; padding: 1.5rem;
+            padding-bottom: env(safe-area-inset-bottom, 24px); border-radius: 1.5rem 1.5rem 0 0; padding: 1.5rem;
         }
         #store-modal.visible { transform: translateY(0); }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body class="p-4 flex flex-col min-h-screen">
     <div id="app" class="max-w-md mx-auto w-full relative">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-bold tracking-tight">INVIS LINK</h1>
-            <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+            <div id="status-badge" class="px-3 py-1 rounded-full text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 tracking-widest">
                 ACTIVE
             </div>
         </div>
 
-        <div class="glass-card rounded-3xl p-6 mb-6 text-center">
-            <p class="text-slate-400 text-sm mb-2">Осталось времени</p>
-            <h2 id="expiry-date" class="text-3xl font-black mb-4 tracking-tight">Загрузка...</h2>
+        <div class="glass-card rounded-[2rem] p-6 mb-6 text-center shadow-2xl">
+            <p class="text-slate-400 text-xs font-medium uppercase tracking-widest mb-2">Осталось времени</p>
+            <h2 id="expiry-date" class="text-4xl font-black mb-6 tracking-tight text-white">Загрузка...</h2>
             
-            <button id="trial-btn" onclick="activateTrial()" class="hidden w-full mb-3 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white transition-all active:scale-95 shadow-lg shadow-green-500/20">
+            <button id="trial-btn" onclick="activateTrial()" class="hidden w-full mb-3 py-4 rounded-2xl text-sm font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white transition-all active:scale-95 shadow-lg shadow-emerald-500/20">
                 🎁 Пробные 24 часа
             </button>
 
-            <button id="main-action-btn" onclick="openStore()" class="w-full mb-4 py-3 rounded-xl text-sm font-bold bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
+            <button id="main-action-btn" onclick="openStore()" class="w-full mb-6 py-4 rounded-2xl text-sm font-bold bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
                 ✨ Продлить подписку
             </button>
 
-            <div class="bg-black/40 rounded-2xl p-4 mb-4 break-all text-[10px] font-mono border border-white/5 text-slate-300">
-                <span id="vpn-key">Ожидание данных...</span>
+            <div class="bg-black/40 rounded-2xl p-4 mb-4 break-all text-[10px] font-mono border border-white/5 text-slate-300 leading-relaxed">
+                <span id="vpn-key">Загрузка данных...</span>
             </div>
             
-            <button id="copy-btn" onclick="copyKey()" class="accent-button w-full py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+            <button id="copy-btn" onclick="copyKey()" class="hidden accent-button w-full py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-500/20">
                 Копировать ключ
             </button>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-            <div class="glass-card rounded-2xl p-4 text-center">
+            <div class="glass-card rounded-[1.5rem] p-4 text-center">
                 <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Рефералы</p>
                 <p id="ref-count" class="text-xl font-bold">0</p>
             </div>
-            <div class="glass-card rounded-2xl p-4 text-center">
-                <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Бонус</p>
-                <p class="text-xl font-bold text-green-400">+7 дней</p>
+            <div class="glass-card rounded-[1.5rem] p-4 text-center">
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-semibold">Бонус</p>
+                <p class="text-xl font-bold text-emerald-400">+7 дней</p>
             </div>
         </div>
     </div>
 
     <div id="backdrop" onclick="closeStore()"></div>
-
-    <div id="store-modal" class="shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <div id="store-modal" class="shadow-[0_-20px_50px_rgba(0,0,0,0.6)]">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold">Выберите тариф</h3>
-            <button onclick="closeStore()" class="text-slate-400 hover:text-white p-2 text-2xl leading-none">&times;</button>
+            <h3 class="text-xl font-bold">Тарифы</h3>
+            <button onclick="closeStore()" class="text-slate-400 hover:text-white p-2 text-3xl leading-none">&times;</button>
         </div>
         <div class="space-y-3">
-            <button onclick="buyTariff('sub_1m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                <span class="font-semibold text-slate-200">Standard — 1 мес</span>
+            <button onclick="buyTariff('sub_1m')" class="w-full flex justify-between items-center bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                <span class="font-semibold text-slate-200 text-sm">Standard — 1 мес</span>
                 <span class="font-bold text-yellow-400">150 ⭐</span>
             </button>
-            <button onclick="buyTariff('sub_3m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-blue-500/30 hover:border-blue-500 transition-all active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.1)]">
-                <span class="font-semibold text-white">Optimal — 3 мес</span>
+            <button onclick="buyTariff('sub_3m')" class="w-full flex justify-between items-center bg-blue-600/10 p-5 rounded-2xl border border-blue-500/40 hover:border-blue-500 transition-all active:scale-95">
+                <span class="font-semibold text-white text-sm">Optimal — 3 мес</span>
                 <span class="font-bold text-yellow-400">400 ⭐</span>
             </button>
-            <button onclick="buyTariff('sub_1y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                <span class="font-semibold text-slate-200">Premium — 1 год</span>
+            <button onclick="buyTariff('sub_1y')" class="w-full flex justify-between items-center bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                <span class="font-semibold text-slate-200 text-sm">Premium — 1 год</span>
                 <span class="font-bold text-yellow-400">1200 ⭐</span>
-            </button>
-            <button onclick="buyTariff('sub_2y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                <span class="font-semibold text-slate-200">Ultra — 2 года</span>
-                <span class="font-bold text-yellow-400">2000 ⭐</span>
             </button>
         </div>
     </div>
@@ -113,66 +113,147 @@
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-    
+
+        // Конфигурация
         const userId = tg.initDataUnsafe.user?.id || 5501746658;
         const BASE_URL = 'https://89.104.68.109.nip.io:8443';
-    
-        // Профессиональный парсер времени
+
+        // Форматирование времени (Учитывает UTC 'Z' и локальный часовой пояс)
         function formatRemainingTime(expireStr) {
-            if (!expireStr || expireStr === "Не активна" || expireStr === "Ключ не создан") return "Не активна";
+            if (!expireStr || expireStr === "Не активна" || expireStr.includes("Ключ не создан")) return "Не активна";
             
             try {
-                // Создаем объект даты (JS автоматически переведет UTC в местное время)
-                const expireDate = new Date(expireStr);
+                const expireDate = new Date(expireStr); 
                 const now = new Date();
-                
                 const diff = expireDate - now;
-    
+
                 if (diff <= 0) return "Истекла";
-    
+
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-                // Если осталось меньше суток, показываем часы и минуты
-                if (days === 0) {
-                    return `${hours}ч ${mins}м`;
-                }
+
+                if (days === 0) return `${hours}ч ${mins}м`;
                 return `${days}д ${hours}ч`;
             } catch (e) {
-                return expireStr;
+                return "Не активна";
             }
         }
-    
+
+        // Загрузка данных пользователя
         async function loadUserData() {
             try {
                 const response = await fetch(`${BASE_URL}/api/user/${userId}`);
+                if (!response.ok) throw new Error('API Error');
                 const data = await response.json();
                 
-                // КРИТИЧЕСКИ ВАЖНО: Пропускаем дату через функцию форматирования
+                // 1. Обновляем время и статистику
                 document.getElementById('expiry-date').innerText = formatRemainingTime(data.expire_at);
                 document.getElementById('ref-count').innerText = data.ref_count;
                 
-                const hasKey = data.vpn_key && data.vpn_key !== "Ключ не создан";
+                // 2. Логика отображения ключа
+                const hasKey = data.vpn_key && data.vpn_key.startsWith("vless://");
+                
                 if (hasKey) {
                     document.getElementById('vpn-key').innerText = data.vpn_key;
                     document.getElementById('copy-btn').classList.remove('hidden');
                     document.getElementById('main-action-btn').innerText = '✨ Продлить подписку';
+                    document.getElementById('status-badge').innerText = 'ACTIVE';
+                    document.getElementById('status-badge').classList.replace('text-blue-400', 'text-emerald-400');
                 } else {
                     document.getElementById('vpn-key').innerText = 'Оформите подписку для получения ключа';
                     document.getElementById('copy-btn').classList.add('hidden');
                     document.getElementById('main-action-btn').innerText = '💳 Приобрести подписку';
+                    document.getElementById('status-badge').innerText = 'INACTIVE';
                 }
-    
+
+                // 3. Логика кнопки TRIAL
+                // Показываем, если ключ еще не создан и триал не использован
                 if (data.trial_used === 0 && !hasKey) {
                     document.getElementById('trial-btn').classList.remove('hidden');
                 } else {
                     document.getElementById('trial-btn').classList.add('hidden');
                 }
-            } catch (e) { console.error(e); }
+                
+            } catch (e) {
+                console.error("Load error:", e);
+                document.getElementById('expiry-date').innerText = "Ошибка";
+            }
         }
-    
-        // ... остальные функции (activateTrial, copyKey, openStore и т.д.) без изменений
+
+        // Активация пробного периода
+        async function activateTrial() {
+            tg.HapticFeedback.impactOccurred('medium');
+            tg.MainButton.setText("Активация...");
+            tg.MainButton.show();
+            tg.MainButton.showProgress();
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/trial/${userId}`, { method: 'POST' });
+                if (!response.ok) throw new Error('Trial used or error');
+                
+                tg.HapticFeedback.notificationOccurred('success');
+                tg.showAlert("✅ Пробный период (24ч) активирован!");
+                await loadUserData(); 
+            } catch (e) {
+                tg.showAlert("❌ Ошибка: Пробный период уже был использован.");
+            } finally {
+                tg.MainButton.hide();
+            }
+        }
+
+        // Надежное копирование ключа
+        function copyKey() {
+            const keyText = document.getElementById('vpn-key').innerText.trim();
+            
+            if (keyText.startsWith('vless://')) {
+                // Пытаемся использовать современный API
+                navigator.clipboard.writeText(keyText).then(() => {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.showAlert("✅ Ключ скопирован в буфер обмена!");
+                }).catch(() => {
+                    tg.showAlert("❌ Ошибка копирования. Попробуйте выделить текст вручную.");
+                });
+            }
+        }
+
+        // Работа с магазином
+        function openStore() {
+            document.getElementById('backdrop').classList.add('visible');
+            document.getElementById('store-modal').classList.add('visible');
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function closeStore() {
+            document.getElementById('backdrop').classList.remove('visible');
+            document.getElementById('store-modal').classList.remove('visible');
+        }
+
+        async function buyTariff(tariffId) {
+            tg.HapticFeedback.impactOccurred('medium');
+            closeStore();
+            tg.MainButton.showProgress();
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/invoice/${userId}/${tariffId}`);
+                const data = await response.json();
+                
+                tg.MainButton.hideProgress();
+                
+                tg.openInvoice(data.link, function(status) {
+                    if (status === 'paid') {
+                        tg.HapticFeedback.notificationOccurred('success');
+                        tg.showAlert("✅ Оплата прошла! Подписка обновлена.");
+                        loadUserData();
+                    }
+                });
+            } catch (e) {
+                tg.MainButton.hideProgress();
+                tg.showAlert("Ошибка при создании счета.");
+            }
+        }
+
+        // Стартовый запуск
         loadUserData();
     </script>
 </body>
