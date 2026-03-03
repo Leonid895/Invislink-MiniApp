@@ -11,6 +11,7 @@
             background-color: var(--tg-theme-bg-color, #0f172a);
             color: var(--tg-theme-text-color, white);
             font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
         }
         .glass-card {
             background: rgba(30, 41, 59, 0.7);
@@ -21,11 +22,15 @@
             background-color: var(--tg-theme-button-color, #2563eb);
             color: var(--tg-theme-button-text-color, white);
         }
+        /* Анимация модального окна */
+        #store-modal { transition: transform 0.3s ease-in-out; }
+        .modal-hidden { transform: translateY(100%); }
+        .modal-visible { transform: translateY(0); }
     </style>
 </head>
-<body class="p-4">
-    <div id="app" class="max-w-md mx-auto">
-        <div class="flex items-center justify-between mb-8">
+<body class="p-4 h-screen flex flex-col">
+    <div id="app" class="max-w-md mx-auto w-full relative h-full">
+        <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold tracking-tight">INVIS LINK</h1>
             <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 ACTIVE
@@ -36,6 +41,10 @@
             <p class="text-slate-400 text-sm mb-2">Осталось времени</p>
             <h2 id="expiry-date" class="text-3xl font-black mb-4 tracking-tight">Загрузка...</h2>
             
+            <button onclick="openStore()" class="w-full mb-4 py-2 rounded-xl text-sm font-bold bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10">
+                ✨ Продлить подписку
+            </button>
+
             <div class="bg-black/30 rounded-2xl p-4 mb-4 break-all text-[10px] font-mono border border-white/5 text-slate-300">
                 <span id="vpn-key">Ожидание данных...</span>
             </div>
@@ -52,7 +61,33 @@
             </div>
             <div class="glass-card rounded-2xl p-4 text-center">
                 <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Бонус</p>
-                <p class="text-xl font-bold">+7 дней</p>
+                <p class="text-xl font-bold text-green-400">+7 дней</p>
+            </div>
+        </div>
+
+        <div id="store-modal" class="absolute inset-x-0 bottom-0 glass-card rounded-t-3xl p-6 modal-hidden z-50 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Выберите тариф</h3>
+                <button onclick="closeStore()" class="text-slate-400 hover:text-white p-2 text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="buyTariff('sub_1m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                    <span class="font-semibold text-slate-200">Standard — 1 мес</span>
+                    <span class="font-bold text-yellow-400">150 ⭐</span>
+                </button>
+                <button onclick="buyTariff('sub_3m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-blue-500/30 hover:border-blue-500 transition-all active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.1)]">
+                    <span class="font-semibold text-white">Optimal — 3 мес</span>
+                    <span class="font-bold text-yellow-400">400 ⭐</span>
+                </button>
+                <button onclick="buyTariff('sub_1y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                    <span class="font-semibold text-slate-200">Premium — 1 год</span>
+                    <span class="font-bold text-yellow-400">1200 ⭐</span>
+                </button>
+                <button onclick="buyTariff('sub_2y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                    <span class="font-semibold text-slate-200">Ultra — 2 года</span>
+                    <span class="font-bold text-yellow-400">2000 ⭐</span>
+                </button>
             </div>
         </div>
     </div>
@@ -62,51 +97,35 @@
         tg.ready();
         tg.expand();
 
-        // Неубиваемая функция парсинга даты для любых телефонов
+        const userId = tg.initDataUnsafe.user?.id || 5501746658;
+        const BASE_URL = 'https://89.104.68.109.nip.io:8443';
+
         function formatRemainingTime(expireStr) {
             if (!expireStr || expireStr === "Не активна" || expireStr === "-") return "Не активна";
-            
             try {
-                // Разбиваем "2028-08-29 10:21" на части
                 const parts = expireStr.split(' ');
                 if (parts.length !== 2) return expireStr;
-
                 const dateParts = parts[0].split('-');
                 const timeParts = parts[1].split(':');
-
-                // Создаем дату (месяцы в JS идут с 0, поэтому -1)
                 const expireDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0], timeParts[1]);
-                const now = new Date();
-                const diff = expireDate - now;
-
+                const diff = expireDate - new Date();
                 if (diff <= 0) return "Истекла";
-
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
                 return `${days}д ${hours}ч`;
-            } catch (e) {
-                console.error("Date parse error:", e);
-                return expireStr; // Если что-то пошло не так, вернем как есть
-            }
+            } catch (e) { return expireStr; }
         }
 
         async function loadUserData() {
-            const userId = tg.initDataUnsafe.user?.id || 5501746658;
-            const API_URL = `https://89.104.68.109.nip.io:8443/api/user/${userId}`;
-
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(`${BASE_URL}/api/user/${userId}`);
                 if (!response.ok) throw new Error('API Error');
                 const data = await response.json();
-                
                 document.getElementById('expiry-date').innerText = formatRemainingTime(data.expire_at);
                 document.getElementById('vpn-key').innerText = data.vpn_key;
                 document.getElementById('ref-count').innerText = data.ref_count;
-                
             } catch (e) {
                 console.error(e);
-                document.getElementById('expiry-date').innerText = "Ошибка API";
             }
         }
 
@@ -115,7 +134,47 @@
             if (key.startsWith('vless://')) {
                 navigator.clipboard.writeText(key);
                 tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("Ключ успешно скопирован!");
+            }
+        }
+
+        // Логика Магазина
+        function openStore() {
+            document.getElementById('store-modal').classList.remove('modal-hidden');
+            document.getElementById('store-modal').classList.add('modal-visible');
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function closeStore() {
+            document.getElementById('store-modal').classList.remove('modal-visible');
+            document.getElementById('store-modal').classList.add('modal-hidden');
+        }
+
+        async function buyTariff(tariffId) {
+            tg.HapticFeedback.impactOccurred('medium');
+            closeStore();
+            tg.MainButton.showProgress();
+
+            try {
+                // Запрашиваем счет у нашего API
+                const response = await fetch(`${BASE_URL}/api/invoice/${userId}/${tariffId}`);
+                if (!response.ok) throw new Error('Ошибка создания счета');
+                const data = await response.json();
+                
+                tg.MainButton.hideProgress();
+                
+                // Открываем нативное окно оплаты Telegram Stars
+                tg.openInvoice(data.link, function(status) {
+                    if (status === 'paid') {
+                        tg.HapticFeedback.notificationOccurred('success');
+                        tg.showAlert("✅ Оплата прошла успешно! Подписка продлена.");
+                        loadUserData(); // Обновляем данные на экране
+                    } else if (status === 'failed') {
+                        tg.showAlert("❌ Ошибка при оплате. Попробуйте снова.");
+                    }
+                });
+            } catch (e) {
+                tg.MainButton.hideProgress();
+                tg.showAlert("Ошибка сервера при создании счета. Попробуйте позже.");
             }
         }
 
