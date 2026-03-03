@@ -2,16 +2,20 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Invis Link Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Жестко фиксируем премиальную тёмную тему */
         body {
-            background-color: var(--tg-theme-bg-color, #0f172a);
-            color: var(--tg-theme-text-color, white);
+            background-color: #0f172a; 
+            color: white;
             font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
             overflow-x: hidden;
+            overscroll-behavior-y: none; /* Убирает "резинку" при скролле на iOS */
         }
         .glass-card {
             background: rgba(30, 41, 59, 0.7);
@@ -19,17 +23,49 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .accent-button {
-            background-color: var(--tg-theme-button-color, #2563eb);
-            color: var(--tg-theme-button-text-color, white);
+            background-color: #2563eb;
+            color: white;
         }
-        /* Анимация модального окна */
-        #store-modal { transition: transform 0.3s ease-in-out; }
-        .modal-hidden { transform: translateY(100%); }
-        .modal-visible { transform: translateY(0); }
+        
+        /* Затемнение фона при открытии тарифов */
+        #backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 40;
+        }
+        #backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Модальное окно тарифов */
+        #store-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+            padding: 1.5rem;
+        }
+        #store-modal.visible {
+            transform: translateY(0);
+        }
     </style>
 </head>
-<body class="p-4 h-screen flex flex-col">
-    <div id="app" class="max-w-md mx-auto w-full relative h-full">
+<body class="p-4 flex flex-col min-h-screen">
+    <div id="app" class="max-w-md mx-auto w-full relative">
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-bold tracking-tight">INVIS LINK</h1>
             <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
@@ -41,11 +77,11 @@
             <p class="text-slate-400 text-sm mb-2">Осталось времени</p>
             <h2 id="expiry-date" class="text-3xl font-black mb-4 tracking-tight">Загрузка...</h2>
             
-            <button onclick="openStore()" class="w-full mb-4 py-2 rounded-xl text-sm font-bold bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10">
+            <button onclick="openStore()" class="w-full mb-4 py-3 rounded-xl text-sm font-bold bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
                 ✨ Продлить подписку
             </button>
 
-            <div class="bg-black/30 rounded-2xl p-4 mb-4 break-all text-[10px] font-mono border border-white/5 text-slate-300">
+            <div class="bg-black/40 rounded-2xl p-4 mb-4 break-all text-[10px] font-mono border border-white/5 text-slate-300">
                 <span id="vpn-key">Ожидание данных...</span>
             </div>
             
@@ -64,31 +100,33 @@
                 <p class="text-xl font-bold text-green-400">+7 дней</p>
             </div>
         </div>
+    </div>
 
-        <div id="store-modal" class="absolute inset-x-0 bottom-0 glass-card rounded-t-3xl p-6 modal-hidden z-50 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold">Выберите тариф</h3>
-                <button onclick="closeStore()" class="text-slate-400 hover:text-white p-2 text-2xl leading-none">&times;</button>
-            </div>
-            
-            <div class="space-y-3">
-                <button onclick="buyTariff('sub_1m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                    <span class="font-semibold text-slate-200">Standard — 1 мес</span>
-                    <span class="font-bold text-yellow-400">150 ⭐</span>
-                </button>
-                <button onclick="buyTariff('sub_3m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-blue-500/30 hover:border-blue-500 transition-all active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.1)]">
-                    <span class="font-semibold text-white">Optimal — 3 мес</span>
-                    <span class="font-bold text-yellow-400">400 ⭐</span>
-                </button>
-                <button onclick="buyTariff('sub_1y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                    <span class="font-semibold text-slate-200">Premium — 1 год</span>
-                    <span class="font-bold text-yellow-400">1200 ⭐</span>
-                </button>
-                <button onclick="buyTariff('sub_2y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                    <span class="font-semibold text-slate-200">Ultra — 2 года</span>
-                    <span class="font-bold text-yellow-400">2000 ⭐</span>
-                </button>
-            </div>
+    <div id="backdrop" onclick="closeStore()"></div>
+
+    <div id="store-modal" class="shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">Выберите тариф</h3>
+            <button onclick="closeStore()" class="text-slate-400 hover:text-white p-2 text-2xl leading-none">&times;</button>
+        </div>
+        
+        <div class="space-y-3">
+            <button onclick="buyTariff('sub_1m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                <span class="font-semibold text-slate-200">Standard — 1 мес</span>
+                <span class="font-bold text-yellow-400">150 ⭐</span>
+            </button>
+            <button onclick="buyTariff('sub_3m')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-blue-500/30 hover:border-blue-500 transition-all active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.1)]">
+                <span class="font-semibold text-white">Optimal — 3 мес</span>
+                <span class="font-bold text-yellow-400">400 ⭐</span>
+            </button>
+            <button onclick="buyTariff('sub_1y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                <span class="font-semibold text-slate-200">Premium — 1 год</span>
+                <span class="font-bold text-yellow-400">1200 ⭐</span>
+            </button>
+            <button onclick="buyTariff('sub_2y')" class="w-full flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
+                <span class="font-semibold text-slate-200">Ultra — 2 года</span>
+                <span class="font-bold text-yellow-400">2000 ⭐</span>
+            </button>
         </div>
     </div>
 
@@ -134,19 +172,19 @@
             if (key.startsWith('vless://')) {
                 navigator.clipboard.writeText(key);
                 tg.HapticFeedback.notificationOccurred('success');
+                tg.showAlert("Ключ успешно скопирован!");
             }
         }
 
-        // Логика Магазина
         function openStore() {
-            document.getElementById('store-modal').classList.remove('modal-hidden');
-            document.getElementById('store-modal').classList.add('modal-visible');
+            document.getElementById('backdrop').classList.add('visible');
+            document.getElementById('store-modal').classList.add('visible');
             tg.HapticFeedback.impactOccurred('light');
         }
 
         function closeStore() {
-            document.getElementById('store-modal').classList.remove('modal-visible');
-            document.getElementById('store-modal').classList.add('modal-hidden');
+            document.getElementById('backdrop').classList.remove('visible');
+            document.getElementById('store-modal').classList.remove('visible');
         }
 
         async function buyTariff(tariffId) {
@@ -155,19 +193,17 @@
             tg.MainButton.showProgress();
 
             try {
-                // Запрашиваем счет у нашего API
                 const response = await fetch(`${BASE_URL}/api/invoice/${userId}/${tariffId}`);
                 if (!response.ok) throw new Error('Ошибка создания счета');
                 const data = await response.json();
                 
                 tg.MainButton.hideProgress();
                 
-                // Открываем нативное окно оплаты Telegram Stars
                 tg.openInvoice(data.link, function(status) {
                     if (status === 'paid') {
                         tg.HapticFeedback.notificationOccurred('success');
                         tg.showAlert("✅ Оплата прошла успешно! Подписка продлена.");
-                        loadUserData(); // Обновляем данные на экране
+                        loadUserData(); 
                     } else if (status === 'failed') {
                         tg.showAlert("❌ Ошибка при оплате. Попробуйте снова.");
                     }
