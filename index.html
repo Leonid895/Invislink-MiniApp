@@ -54,48 +54,57 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-    
-        async function loadUserData() {
-            // Получаем ID пользователя из Telegram
-            const user = tg.initDataUnsafe.user;
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // Функция для превращения даты в формат "Хд Yч"
+    function formatRemainingTime(expireStr) {
+        if (!expireStr || expireStr === "Не активна") return "Не активна";
+        
+        // Преобразуем строку "ГГГГ-ММ-ДД ЧЧ:ММ" в объект даты
+        const expireDate = new Date(expireStr.replace(' ', 'T'));
+        const now = new Date();
+        const diff = expireDate - now;
+
+        if (diff <= 0) return "Истекла";
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+        return `${days}д ${hours}ч`;
+    }
+
+    async function loadUserData() {
+        const userId = tg.initDataUnsafe.user?.id || 5501746658;
+        const API_URL = `https://89.104.68.109.nip.io:8443/api/user/${userId}`;
+
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
             
-            if (user) {
-                const userId = user.id;
-                const API_URL = `https://89.104.68.109.nip.io:8443/api/user/${userId}`;
-    
-                try {
-                    const response = await fetch(API_URL);
-                    if (!response.ok) throw new Error('Ошибка сервера');
-                    
-                    const data = await response.json();
-    
-                    // Подставляем реальные данные в HTML-элементы
-                    document.getElementById('expiry-date').innerText = data.expire_at || "Не активна";
-                    document.getElementById('vpn-key').innerText = data.vpn_key || "Ключ не создан";
-                    document.getElementById('ref-count').innerText = data.ref_count || "0";
-                    
-                } catch (error) {
-                    console.error("Ошибка загрузки данных:", error);
-                    document.getElementById('expiry-date').innerText = "Ошибка API";
-                }
-            } else {
-                document.getElementById('expiry-date').innerText = "User ID не найден";
-            }
+            // Используем функцию форматирования для вывода времени
+            document.getElementById('expiry-date').innerText = formatRemainingTime(data.expire_at);
+            document.getElementById('vpn-key').innerText = data.vpn_key;
+            document.getElementById('ref-count').innerText = data.ref_count;
+            
+        } catch (e) {
+            console.error(e);
+            document.getElementById('expiry-date').innerText = "Ошибка API";
         }
-    
-        function copyKey() {
-            const key = document.getElementById('vpn-key').innerText;
-            if (key && key !== "Ключ не создан") {
-                navigator.clipboard.writeText(key);
-                tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("Ключ скопирован!");
-            }
+    }
+
+    function copyKey() {
+        const key = document.getElementById('vpn-key').innerText;
+        if (key.startsWith('vless://')) {
+            navigator.clipboard.writeText(key);
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.showAlert("Ключ успешно скопирован!");
         }
-    
-        loadUserData();
-    </script>
+    }
+
+    loadUserData();
+</script>
 </body>
 </html>
