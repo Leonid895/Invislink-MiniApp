@@ -156,14 +156,18 @@
         }
 
         // Загрузка данных пользователя
-        async function loadUserData() {
+        // Загрузка данных пользователя (Serverless)
+        function loadUserData() {
             try {
-                const response = await fetch(`${BASE_URL}/api/user/${userId}`);
-                if (!response.ok) {
-                    if (response.status === 404) throw new Error('Пользователь не найден. Напишите /start в боте.');
-                    throw new Error('Ошибка связи с сервером');
-                }
-                const data = await response.json();
+                // Читаем параметры прямо из зашифрованной ссылки Telegram
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                const data = {
+                    vpn_key: urlParams.get('key') || "",
+                    expire_at: urlParams.get('expire') || "-",
+                    ref_count: urlParams.get('refs') || "0",
+                    trial_used: parseInt(urlParams.get('trial') || "0")
+                };
                 
                 // 1. Обновляем время и статистику
                 document.getElementById('expiry-date').innerText = formatRemainingTime(data.expire_at);
@@ -172,7 +176,6 @@
                 // 2. Логика отображения ключа
                 const hasKey = data.vpn_key && data.vpn_key.startsWith("vless://");
                 
-                // Показываем основную кнопку в любом случае
                 document.getElementById('main-action-btn').classList.remove('hidden');
 
                 if (hasKey) {
@@ -202,13 +205,7 @@
                 
             } catch (e) {
                 console.error("Load error:", e);
-                // Проверка на Mixed Content (если сайт на https, а API на http)
-                if (e.name === "TypeError") {
-                    document.getElementById('vpn-key').innerText = "Ошибка соединения. Скорее всего из-за безопасного соединения (Mixed Content).";
-                } else {
-                    document.getElementById('vpn-key').innerText = e.message;
-                }
-                document.getElementById('expiry-date').innerText = "Ошибка";
+                document.getElementById('vpn-key').innerText = "Ошибка загрузки данных.";
                 document.getElementById('status-badge').innerText = 'ERROR';
                 document.getElementById('status-badge').classList.replace('text-blue-400', 'text-red-400');
             }
