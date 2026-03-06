@@ -139,32 +139,48 @@
                 if (!response.ok) throw new Error();
                 const data = await response.json();
                 
+                // Обновляем текст времени и рефералов
                 document.getElementById('expiry-date').innerText = formatRemainingTime(data.expire_at);
                 document.getElementById('ref-count').innerText = data.ref_count;
                 
                 const hasKey = data.vpn_key && data.vpn_key.startsWith("vless://");
-                document.getElementById('main-action-btn').classList.remove('hidden');
+                const trialBtn = document.getElementById('trial-btn');
+                const mainBtn = document.getElementById('main-action-btn');
+                const copyBtn = document.getElementById('copy-btn');
+                const vpnKeyArea = document.getElementById('vpn-key');
+                const badge = document.getElementById('status-badge');
+
+                // Показываем главную кнопку покупки/продления в любом случае
+                mainBtn.classList.remove('hidden');
 
                 if (hasKey) {
-                    document.getElementById('vpn-key').innerText = data.vpn_key;
-                    document.getElementById('copy-btn').classList.remove('hidden');
-                    document.getElementById('main-action-btn').innerText = '✨ Продлить подписку';
+                    // СЦЕНАРИЙ 2: У пользователя ЕСТЬ подписка
+                    mainBtn.innerText = '✨ Продлить подписку';
+                    trialBtn.classList.add('hidden'); // Пробная версия скрыта
                     
-                    const badge = document.getElementById('status-badge');
+                    vpnKeyArea.innerText = data.vpn_key;
+                    copyBtn.classList.remove('hidden');
                     badge.innerText = 'ACTIVE';
                     badge.className = "px-3 py-1 rounded-full text-[10px] font-black tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
                 } else {
-                    document.getElementById('vpn-key').innerText = 'Оформите подписку для получения ключа';
-                    document.getElementById('status-badge').innerText = 'INACTIVE';
-                    document.getElementById('status-badge').className = "px-3 py-1 rounded-full text-[10px] font-black tracking-widest bg-slate-500/20 text-slate-400 border border-slate-500/30";
-                }
+                    // СЦЕНАРИЙ 1 и 3: Подписки НЕТ
+                    mainBtn.innerText = '💳 Приобрести подписку';
+                    vpnKeyArea.innerText = 'Оформите подписку для получения ключа';
+                    copyBtn.classList.add('hidden');
+                    badge.innerText = 'INACTIVE';
+                    badge.className = "px-3 py-1 rounded-full text-[10px] font-black tracking-widest bg-slate-500/20 text-slate-400 border border-slate-500/30";
 
-                if (data.trial_used === 0 && !hasKey) {
-                    document.getElementById('trial-btn').classList.remove('hidden');
-                } else {
-                    document.getElementById('trial-btn').classList.add('hidden');
+                    // Проверяем, первый ли это раз (использован ли триал)
+                    if (data.trial_used === false || data.trial_used === 0) {
+                        // СЦЕНАРИЙ 1: Пользователь первый раз (триал не трогал)
+                        trialBtn.classList.remove('hidden');
+                    } else {
+                        // СЦЕНАРИЙ 3: Не первый раз, триал уже был, подписки нет
+                        trialBtn.classList.add('hidden');
+                    }
                 }
             } catch (e) {
+                console.error("Load error:", e);
                 document.getElementById('expiry-date').innerText = "Ошибка сети";
             }
         }
