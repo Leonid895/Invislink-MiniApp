@@ -189,16 +189,25 @@
         async function activateTrial() {
             tg.HapticFeedback.impactOccurred('medium');
             tg.MainButton.setText("Выдача ключа...");
-            tg.MainButton.show(); tg.MainButton.showProgress();
-
+            tg.MainButton.show(); 
+            tg.MainButton.showProgress();
+        
             try {
                 const response = await fetch(`${BASE_URL}/api/trial/${userId}`, { method: 'POST' });
-                if (!response.ok) throw new Error('Ошибка');
+                
+                // Если сервер ответил ошибкой (400, 404, 500)
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    // Выбрасываем ошибку с текстом от сервера
+                    throw new Error(errorData.detail || 'Ошибка сервера');
+                }
                 
                 tg.HapticFeedback.notificationOccurred('success');
-                await loadUserData(); // Экран обновится сам!
+                tg.showAlert("✅ Пробный период успешно активирован!");
+                await loadUserData(); // Обновляем экран
             } catch (e) {
-                tg.showAlert("❌ Пробный период уже использован.");
+                // Теперь здесь будет реальная ошибка: "User not found" или "Failed to create VPN"
+                tg.showAlert(`❌ ${e.message}`);
             } finally {
                 tg.MainButton.hide();
             }
