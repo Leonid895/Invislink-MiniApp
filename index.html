@@ -1,10 +1,26 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Invis Link Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script 
+        async 
+        src="https://tganalytics.xyz/index.js" 
+        onload="initAnalytics()" 
+        type="text/javascript"
+    ></script>
+    <script>
+        function initAnalytics() {
+          window.telegramAnalytics.init({
+            token: 'ТВОЙ_ТОКЕН_ИЗ_БОТА_АНАЛИТИКИ', 
+            appName: 'ТВОЙ_АЙДИ_ПРИЛОЖЕНИЯ', 
+          });
+        }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -40,80 +56,78 @@
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-bold tracking-tight">INVIS LINK</h1>
             <div id="status-badge" class="px-3 py-1 rounded-full text-[10px] font-black bg-blue-500/20 text-blue-400 border border-blue-500/30 tracking-widest">
-                ЗАГРУЗКА
+                LOADING
             </div>
         </div>
 
         <div class="glass-card rounded-[2rem] p-6 mb-6 text-center shadow-2xl">
-            <p class="text-slate-400 text-xs font-medium uppercase tracking-widest mb-2">Осталось времени</p>
+            <p id="time-label" class="text-slate-400 text-xs font-medium uppercase tracking-widest mb-2">Time remaining</p>
             <h2 id="expiry-date" class="text-4xl font-black mb-6 tracking-tight text-white">...</h2>
             
             <button id="trial-btn" onclick="activateTrial()" class="hidden w-full mb-3 py-4 rounded-2xl text-sm font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white transition-all active:scale-95 shadow-lg shadow-emerald-500/20">
-                🎁 Активировать 24 часа
+                🎁 Activate 24 hours
             </button>
 
             <button id="main-action-btn" onclick="openStore()" class="hidden w-full mb-6 py-4 rounded-2xl text-sm font-bold bg-white/10 text-white hover:bg-white/20 transition-all border border-white/10 active:scale-95">
-                💳 Продлить подписку
+                💳 Buy subscription
             </button>
 
             <div class="bg-black/40 rounded-2xl p-4 mb-4 break-all text-[10px] font-mono border border-white/5 text-slate-300 leading-relaxed">
-                <span id="vpn-key">Связь с сервером...</span>
+                <span id="vpn-key">Connecting to server...</span>
             </div>
             
             <button id="copy-btn" onclick="copyKey()" class="hidden accent-button w-full py-4 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-500/20 mb-3">
-                Копировать ключ
+                Copy key
             </button>
     
-            <a href="https://telegra.ph/Instrukciya-po-podklyucheniyu-InvisLink-VPN-03-03" target="_blank" class="block w-full py-3 rounded-2xl text-xs font-semibold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-white transition-all border border-transparent hover:border-white/10 text-center active:scale-95">
-                📖 Как настроить VPN?
+            <a href="https://telegra.ph/Instrukciya-po-podklyucheniyu-InvisLink-VPN-03-03" target="_blank" id="guide-link" class="block w-full py-3 rounded-2xl text-xs font-semibold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-white transition-all border border-transparent hover:border-white/10 text-center active:scale-95">
+                📖 How to setup VPN?
             </a>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
             <div class="glass-card rounded-[1.5rem] p-4 text-center cursor-pointer hover:bg-white/10 transition-all active:scale-95" onclick="shareRef()">
-                <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Рефералы</p>
+                <p id="ref-label" class="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Referrals</p>
                 <p id="ref-count" class="text-xl font-bold">0</p>
-                <p class="text-[10px] text-blue-400 mt-1 font-bold">Пригласить ➔</p>
+                <p id="invite-label" class="text-[10px] text-blue-400 mt-1 font-bold">Invite ➔</p>
             </div>
             <div class="glass-card rounded-[1.5rem] p-4 text-center">
-                <p class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-semibold">Бонус</p>
-                <p class="text-xl font-bold text-emerald-400">+7 дней</p>
-                <p class="text-[9px] text-slate-500 mt-1">за друга</p>
+                <p id="bonus-label" class="text-[10px] text-slate-400 uppercase tracking-widest mb-1 font-semibold">Bonus</p>
+                <p id="bonus-days" class="text-xl font-bold text-emerald-400">+7 days</p>
+                <p id="per-friend-label" class="text-[9px] text-slate-500 mt-1">per friend</p>
             </div>
-        </div>
-
-        
-        <div class="mt-8 pb-4 text-center">
-            <p class="text-[12px] text-slate-500 font-medium">
-                Проблемы? Поддержка:<br>
-                <a href="mailto:invis-link@yandex.ru" class="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 underline-offset-4 transition-colors">invis-link@yandex.ru</a>
-            </p>
         </div>
     </div>
 
     <div id="backdrop" onclick="closeStore()"></div>
     <div id="store-modal" class="shadow-[0_-20px_50px_rgba(0,0,0,0.6)]">
         <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold">Тарифы</h3>
+            <h3 id="plans-title" class="text-xl font-bold">Plans</h3>
             <button onclick="closeStore()" class="text-slate-400 hover:text-white p-2 text-3xl leading-none">&times;</button>
         </div>
         <div class="space-y-3">
             <button onclick="buyTariff('sub_1m')" class="w-full flex justify-between items-center bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                <span class="font-semibold text-slate-200 text-sm">Standard — 1 мес</span>
+                <span id="t1-label" class="font-semibold text-slate-200 text-sm">Standard — 1 mo</span>
                 <span class="font-bold text-yellow-400">150 ⭐</span>
             </button>
             <button onclick="buyTariff('sub_3m')" class="w-full flex justify-between items-center bg-blue-600/10 p-5 rounded-2xl border border-blue-500/40 hover:border-blue-500 transition-all active:scale-95">
-                <span class="font-semibold text-white text-sm">Optimal — 3 мес</span>
+                <span id="t2-label" class="font-semibold text-white text-sm">Optimal — 3 mo</span>
                 <span class="font-bold text-yellow-400">400 ⭐</span>
             </button>
             <button onclick="buyTariff('sub_1y')" class="w-full flex justify-between items-center bg-white/5 p-5 rounded-2xl border border-white/5 hover:border-blue-500/50 transition-all active:scale-95">
-                <span class="font-semibold text-slate-200 text-sm">Premium — 1 год</span>
+                <span id="t3-label" class="font-semibold text-slate-200 text-sm">Premium — 1 yr</span>
                 <span class="font-bold text-yellow-400">1200 ⭐</span>
             </button>
             <button onclick="buyTariff('sub_2y')" class="w-full flex justify-between items-center bg-fuchsia-600/10 p-5 rounded-2xl border border-fuchsia-500/30 hover:border-fuchsia-500 transition-all active:scale-95">
-                <span class="font-semibold text-white text-sm">Ultra — 2 года</span>
+                <span id="t4-label" class="font-semibold text-white text-sm">Ultra — 2 yrs</span>
                 <span class="font-bold text-yellow-400">2000 ⭐</span>
             </button>
+        </div>
+        <div class="mt-8 pb-4 text-center">
+            <p id="support-text" class="text-[12px] text-slate-500 font-medium">
+                Issues? Support:<br>
+                <a href="mailto:invis-link@yandex.ru" class="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 underline-offset-4 transition-colors">invis-link@yandex.ru</a>
+            </p>
         </div>
     </div>
 
@@ -122,23 +136,66 @@
         tg.ready(); tg.expand();
 
         const userId = tg.initDataUnsafe.user?.id || 5501746658;
-        // Используем твой рабочий домен с защищенным портом
         const BASE_URL = 'https://176.124.221.100.sslip.io:8443'; 
+        
+        // --- ЛОКАЛИЗАЦИЯ (Английский по умолчанию, Русский если у юзера стоит RU) ---
+        const userLang = tg.initDataUnsafe.user?.language_code;
+        const lang = (userLang === 'ru') ? 'ru' : 'en';
+        
+        const i18n = {
+            en: {
+                loading: "LOADING", timeLabel: "TIME REMAINING", trialBtn: "🎁 Activate 24 hours", buyBtn: "💳 Buy subscription", extendBtn: "✨ Extend subscription",
+                connecting: "Connecting to server...", copyBtn: "Copy key", guide: "📖 How to setup VPN?", refs: "Referrals", invite: "Invite ➔",
+                bonus: "Bonus", bonusDays: "+7 days", perFriend: "per friend", plans: "Plans", t1: "Standard — 1 mo", t2: "Optimal — 3 mo",
+                t3: "Premium — 1 yr", t4: "Ultra — 2 yrs", support: "Issues? Support:", errStart: "Please send /start to the bot", errServer: "Server error",
+                inactive: "Inactive", expired: "Expired", d: "d", h: "h", m: "m", getKey: "Subscribe to get your key", activeB: "ACTIVE", inactiveB: "INACTIVE",
+                trialSuccess: "✅ Trial period successfully activated!", prep: "Preparing...", share: "Try this VPN! Fast, no limits, and 24 hours free 🚀"
+            },
+            ru: {
+                loading: "ЗАГРУЗКА", timeLabel: "ОСТАЛОСЬ ВРЕМЕНИ", trialBtn: "🎁 Активировать 24 часа", buyBtn: "💳 Приобрести подписку", extendBtn: "✨ Продлить подписку",
+                connecting: "Связь с сервером...", copyBtn: "Копировать ключ", guide: "📖 Как настроить VPN?", refs: "Рефералы", invite: "Пригласить ➔",
+                bonus: "Бонус", bonusDays: "+7 дней", perFriend: "за друга", plans: "Тарифы", t1: "Standard — 1 мес", t2: "Optimal — 3 мес",
+                t3: "Premium — 1 год", t4: "Ultra — 2 года", support: "Проблемы? Поддержка:", errStart: "Отправьте /start в бота", errServer: "Ошибка сервера",
+                inactive: "Не активна", expired: "Истекла", d: "д", h: "ч", m: "м", getKey: "Оформите подписку для получения ключа", activeB: "ACTIVE", inactiveB: "INACTIVE",
+                trialSuccess: "✅ Пробный период успешно активирован!", prep: "Подготовка...", share: "Попробуй этот VPN! Быстро, без лимитов и 24 часа бесплатно 🚀"
+            }
+        };
+        const t = i18n[lang];
+
+        // Применяем переводы сразу при загрузке
+        document.getElementById('status-badge').innerText = t.loading;
+        document.getElementById('time-label').innerText = t.timeLabel;
+        document.getElementById('trial-btn').innerText = t.trialBtn;
+        document.getElementById('main-action-btn').innerText = t.buyBtn;
+        document.getElementById('vpn-key').innerText = t.connecting;
+        document.getElementById('copy-btn').innerText = t.copyBtn;
+        document.getElementById('guide-link').innerText = t.guide;
+        document.getElementById('ref-label').innerText = t.refs;
+        document.getElementById('invite-label').innerText = t.invite;
+        document.getElementById('bonus-label').innerText = t.bonus;
+        document.getElementById('bonus-days').innerText = t.bonusDays;
+        document.getElementById('per-friend-label').innerText = t.perFriend;
+        document.getElementById('plans-title').innerText = t.plans;
+        document.getElementById('t1-label').innerText = t.t1;
+        document.getElementById('t2-label').innerText = t.t2;
+        document.getElementById('t3-label').innerText = t.t3;
+        document.getElementById('t4-label').innerText = t.t4;
+        document.getElementById('support-text').innerHTML = `${t.support}<br><a href="mailto:invis-link@yandex.ru" class="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 underline-offset-4 transition-colors">invis-link@yandex.ru</a>`;
 
         function formatRemainingTime(expireStr) {
-            if (!expireStr || expireStr === "None" || expireStr === "-") return "Не активна";
+            if (!expireStr || expireStr === "None" || expireStr === "-") return t.inactive;
             try {
                 const expireDate = new Date(expireStr.replace(' ', 'T')); 
                 const now = new Date();
                 const diff = expireDate - now;
 
-                if (diff <= 0) return "Истекла";
+                if (diff <= 0) return t.expired;
 
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                if (days === 0) return `${hours}ч ${Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}м`;
-                return `${days}д ${hours}ч`;
-            } catch (e) { return "Не активна"; }
+                if (days === 0) return `${hours}${t.h} ${Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))}${t.m}`;
+                return `${days}${t.d} ${hours}${t.h}`;
+            } catch (e) { return t.inactive; }
         }
 
         async function loadUserData() {
@@ -147,8 +204,9 @@
                 if (!response.ok) throw new Error();
                 const data = await response.json();
                 
-                // Обновляем текст времени и рефералов
                 document.getElementById('expiry-date').innerText = formatRemainingTime(data.expire_at);
+                document.getElementById('expiry-date').classList.remove('text-xl');
+                document.getElementById('expiry-date').classList.add('text-4xl');
                 document.getElementById('ref-count').innerText = data.ref_count;
                 
                 const hasKey = data.vpn_key && data.vpn_key.startsWith("vless://");
@@ -158,102 +216,88 @@
                 const vpnKeyArea = document.getElementById('vpn-key');
                 const badge = document.getElementById('status-badge');
 
-                // Показываем главную кнопку покупки/продления в любом случае
                 mainBtn.classList.remove('hidden');
 
                 if (hasKey) {
-                    // СЦЕНАРИЙ 2: У пользователя ЕСТЬ подписка
-                    mainBtn.innerText = '✨ Продлить подписку';
-                    trialBtn.classList.add('hidden'); // Пробная версия скрыта
-                    
+                    mainBtn.innerText = t.extendBtn;
+                    trialBtn.classList.add('hidden');
                     vpnKeyArea.innerText = data.vpn_key;
                     copyBtn.classList.remove('hidden');
-                    badge.innerText = 'ACTIVE';
+                    badge.innerText = t.activeB;
                     badge.className = "px-3 py-1 rounded-full text-[10px] font-black tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
                 } else {
-                    // СЦЕНАРИЙ 1 и 3: Подписки НЕТ
-                    mainBtn.innerText = '💳 Приобрести подписку';
-                    vpnKeyArea.innerText = 'Оформите подписку для получения ключа';
+                    mainBtn.innerText = t.buyBtn;
+                    vpnKeyArea.innerText = t.getKey;
                     copyBtn.classList.add('hidden');
-                    badge.innerText = 'INACTIVE';
+                    badge.innerText = t.inactiveB;
                     badge.className = "px-3 py-1 rounded-full text-[10px] font-black tracking-widest bg-slate-500/20 text-slate-400 border border-slate-500/30";
 
-                    // Проверяем, первый ли это раз (использован ли триал)
                     if (data.trial_used === false || data.trial_used === 0) {
-                        // СЦЕНАРИЙ 1: Пользователь первый раз (триал не трогал)
                         trialBtn.classList.remove('hidden');
                     } else {
-                        // СЦЕНАРИЙ 3: Не первый раз, триал уже был, подписки нет
                         trialBtn.classList.add('hidden');
                     }
                 }
             } catch (e) {
                 console.error("Load error:", e);
-                document.getElementById('expiry-date').innerText = "Ошибка сети";
+                // Элегантная замена "Ошибки сети"
+                document.getElementById('expiry-date').innerText = t.errStart;
+                document.getElementById('expiry-date').classList.remove('text-4xl');
+                document.getElementById('expiry-date').classList.add('text-xl');
             }
         }
 
-        // БЕСШОВНАЯ АКТИВАЦИЯ ТРИАЛА
         async function activateTrial() {
             tg.HapticFeedback.impactOccurred('medium');
-            tg.MainButton.setText("Выдача ключа...");
+            tg.MainButton.setText(t.prep);
             tg.MainButton.show(); 
             tg.MainButton.showProgress();
         
             try {
                 const response = await fetch(`${BASE_URL}/api/trial/${userId}`, { method: 'POST' });
-                
-                // Если сервер ответил ошибкой (400, 404, 500)
                 if (!response.ok) {
                     const errorData = await response.json();
-                    // Выбрасываем ошибку с текстом от сервера
-                    throw new Error(errorData.detail || 'Ошибка сервера');
+                    throw new Error(errorData.detail || t.errServer);
                 }
                 
                 tg.HapticFeedback.notificationOccurred('success');
-                tg.showAlert("✅ Пробный период успешно активирован!");
-                await loadUserData(); // Обновляем экран
+                tg.showAlert(t.trialSuccess);
+                await loadUserData(); 
             } catch (e) {
-                // Теперь здесь будет реальная ошибка: "User not found" или "Failed to create VPN"
                 tg.showAlert(`❌ ${e.message}`);
             } finally {
                 tg.MainButton.hide();
             }
         }
 
-        // БЕСШОВНАЯ ОПЛАТА ЧЕРЕЗ INVOICE
         async function buyTariff(tariffId) {
             tg.HapticFeedback.impactOccurred('medium');
             closeStore();
-            tg.MainButton.setText("Подготовка...");
+            tg.MainButton.setText(t.prep);
             tg.MainButton.show(); tg.MainButton.showProgress();
 
             try {
-                // Запрашиваем ссылку на счет у нашего API
                 const response = await fetch(`${BASE_URL}/api/invoice/${userId}/${tariffId}`);
                 const data = await response.json();
                 tg.MainButton.hide();
                 
-                // Открываем нативное окно оплаты Telegram поверх приложения
                 tg.openInvoice(data.link, function(status) {
                     if (status === 'paid') {
                         tg.HapticFeedback.notificationOccurred('success');
-                        // Если оплата успешна, просто обновляем данные на экране
                         setTimeout(loadUserData, 2000); 
                     }
                 });
             } catch (e) {
                 tg.MainButton.hide();
-                tg.showAlert("Ошибка соединения с сервером.");
+                tg.showAlert(t.errServer);
             }
         }
 
         function shareRef() {
             tg.HapticFeedback.impactOccurred('light');
-            // Если используешь чистое приложение, мы можем генерировать базовую ссылку
-            const botUsername = "InvisLink_VPN_bot"; // Замени на юзернейм своего бота
+            const botUsername = "InvisLink_VPN_bot"; 
             const refLink = `https://t.me/${botUsername}?start=${userId}`;
-            const text = encodeURIComponent("Попробуй этот VPN! Быстро, без лимитов и 24 часа бесплатно 🚀");
+            const text = encodeURIComponent(t.share);
             tg.openTelegramLink(`https://t.me/share/url?url=${refLink}&text=${text}`);
         }
 
